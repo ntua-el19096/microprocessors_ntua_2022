@@ -1,0 +1,28 @@
+IN 10H ;memory protection off
+MVI A,FFH ; accu = 255
+MVI C,00H ; 20-70 numbers counter
+LXI D,0000H ; zeros counter
+LXI H,0900H ; first number memory address 
+FOR:
+	MVI B,09H ;b=9 to count the zeros of current number
+	MOV M,A ; store number in memory
+	 
+L1:	DCR B
+	JZ L2 ; if we have iterated through every digit 
+	RRC ; else shift right
+	JC L1 ; if digit = 1 go to L1 to check the next digit
+	INX D ; else count +1 zeroz
+	JMP L1 ; go to L1 to check next digit
+	
+L2:	CPI 71H ; check if number is <=70
+	JNC L3 ; if no go to L3 to store next number 
+	CPI 20H ; else check if number is >=20
+	JC L3 ; if no go to L3 to store next number
+	INR C ; else increase counter for numbers between 20 and 70
+
+L3:	DCR A ; decrease remaining numbers counter 
+	INX H ; point to next memory location
+	CPI FFH ; check if we stored every number in range [0,255]
+	JNZ FOR ; if no go to FOR
+	RST 1 
+	END

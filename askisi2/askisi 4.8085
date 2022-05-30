@@ -1,0 +1,57 @@
+START:
+LDA 2000H	;load DIP
+ANI 08H		;isolate 4th digit (00001000)	
+MOV B,A 	;A1 is now in B
+LDA 2000H	;load DIP
+ANI 04H 	;isolate 3rd digit (00000100)
+RLC		;shift it left to OR it with A1
+ORA B 		;A1 OR B1
+RRC		;double right shift to put it in second LED
+RRC
+MOV B,A 	;X1 is in B
+
+LDA 2000H	;load DIP
+ANI 01H		;isolate 1st digit (00000001)
+MOV C,A 	;C has B0
+LDA 2000H	;load DIP
+ANI 02H		;isolate 2nd digit (00000010)
+RRC 		;A has A0
+ORA C		;A0 or B0
+RLC		;shift it left to AND it with X1 
+ANA B		;X0 = (A0 or B0) AND X1
+RRC		;shift it right to put in first LED
+ORA B		;add result in B
+MOV B,A 	;B now has 0,0,0,0,0,0,x1,x0
+
+LDA 2000H	;load DIP
+ANI 10H		;isolate 5th digit (00010000)
+MOV C,A		;C has B2
+LDA 2000H	;load DIP
+ANI 20H		;isolate 6th digit (00100000)
+RRC		;shift it right to AND with B2
+ANA C		;C = B2 AND A2
+MOV D,A		;D has A2 AND B2 (to use it later for X3)
+RRC		;shift right 2 times to put in X2 position
+RRC		;
+ORA B		;add X2 to B
+MOV B,A		;B now has 0,0,0,0,0,X2,X1,X0
+
+LDA 2000H	;load DIP
+ANI 40H		;isolate 7th digit (01000000)
+MOV C,A		;C has B3
+LDA 2000H	;load DIP
+ANI 80H		;isolate 8th digit (10000000)
+RRC		;shift right to perform AND with B3
+ANA C		;A = A3 AND B3
+RRC		;double right shift to perform XOR with X2
+RRC		;
+XRA D		;A = (A3 AND B3) XOR X2
+RRC		;shift right to put in X3 position
+ORA B		;add B result to A
+CMA		;complement A (inverser LED logic)
+STA 3000H	;output LEDs
+JMP START	;run again
+END
+
+
+

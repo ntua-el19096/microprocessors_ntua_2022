@@ -1,0 +1,140 @@
+START:	IN 10H		;Memory protection off
+		LXI H,0800H	;Point to 0800H memory location (the first storing block)
+		MVI B,04H	;For 4 blanks in the first four segments
+
+BLANK:	MVI M,10H 	;Hex code of blank
+		INX H		;Increase HL register
+		DCR B		;Decrease B
+		JNZ BLANK	;If B!=0 go to Blank to add one more blank 
+
+LINE0:	MVI A,FEH	;choose the line 0
+		STA 2800H	;
+		LDA 1800H	;load to A the reading button's port (porta anagnosis pliktron)
+		ANI 07H		;we need only the first three digits 
+		MVI C,86H	;Code for INSTR STEP
+		CPI 06H		;check if A=00000110 i.e. the INSTR STEP button is pushed
+		JZ SHOW		;If yes jump to show in order to display it in 7-segments
+		MVI C,85H	;Code for FETCH PC
+		CPI 05H		;check if A=00000101 i.e. the FETCH PC button is pushed
+		JZ SHOW		;If yes jump to show in order to display it in 7-segments
+		;MVI C,F7H	;These commands is in annotations because
+		;CPI 03H	;we want to ignore the HDWR STEP
+		;JZ SHOW	;
+
+LINE1:	MVI A,FDH	;choose the line 1
+		STA 2800H	;
+		LDA 1800H	;load to A the reading button's port (porta anagnosis pliktron)
+		ANI 07H		;we want to check only the first three digits
+		MVI C,84H	;Code for RUN
+		CPI 06H		;check if A=00000110 i.e. the RUN button is pushed
+		JZ SHOW		;If yes jump to show in order to display it in 7-segments
+		MVI C,80H	;COde for FETCH REG
+		CPI 05H		;check if A=00000101 i.e. the FETCH REG button is pushed
+		JZ SHOW		;If yes jump to show in order to display it in 7-segments
+		MVI C,82H 	;Code for FETCH ADRS
+		CPI 03H		;check if A=00000011 i.e. the FETCH ADRS button is pushed
+		JZ SHOW		;If yes jump to show in order to display it in 7-segments
+
+LINE2:	MVI A,FBH	;Repeat the same process as above for the next lines
+		STA 2800H	
+		LDA 1800H	
+		ANI 07H		
+		MVI C,00H	;For 0
+		CPI 06H		
+		JZ SHOW		
+		MVI C,83H	;For STORE/INCR
+		CPI 05H
+		JZ SHOW
+		MVI C,81H   ;For DECR
+		CPI 03H
+		JZ SHOW	
+
+LINE3:	MVI A,F7H
+		STA 2800H
+		LDA 1800H
+		ANI 07H
+		MVI C,01H	;For 1
+		CPI 06H
+		JZ SHOW
+		MVI C,02H	;For 2
+		CPI 05H
+		JZ SHOW
+		MVI C,03H   ;For 3
+		CPI 03H
+		JZ SHOW
+
+LINE4:	MVI A,EFH
+		STA 2800H
+		LDA 1800H
+		ANI 07H
+		MVI C,04H	;For 4
+		CPI 06H
+		JZ SHOW
+		MVI C,05H	;For 5
+		CPI 05H
+		JZ SHOW
+		MVI C,06H   ;For 6
+		CPI 03H
+		JZ SHOW
+
+LINE5:	MVI A,DFH
+		STA 2800H
+		LDA 1800H
+		ANI 07H
+		MVI C,07H	;For 7
+		CPI 06H
+		JZ SHOW
+		MVI C,08H	;For 8
+		CPI 05H
+		JZ SHOW
+		MVI C,09H   ;For 9
+		CPI 03H
+		JZ SHOW
+
+LINE6:	MVI A,BFH
+		STA 2800H
+		LDA 1800H
+		ANI 07H
+		MVI C,0AH	;For A
+		CPI 06H
+		JZ SHOW
+		MVI C,0BH	;For B
+		CPI 05H
+		JZ SHOW
+		MVI C,0CH   ;For C
+		CPI 03H
+		JZ SHOW
+
+LINE7:	MVI A,7FH
+		STA 2800H
+		LDA 1800H
+		ANI 07H
+		MVI C,0DH	;For D
+		CPI 06H
+		JZ SHOW
+		MVI C,0EH	;For E
+		CPI 05H
+		JZ SHOW
+		MVI C,0FH   ;For F
+		CPI 03H
+		JZ SHOW
+		JMP START   ;If no button is pushed loop to start to load again
+
+SHOW:	LXI H,0A04H ;load to H the correct memory position
+		MOV A,C     ;Move to A the code for the button that is being pushed
+		ANI 0FH     ;We keep the 4 LSBs 
+		MOV M,A     ;And store them in 0A04H i.e. in the fifth postion of 7-segment display
+		INX H       ;Next memory position
+		MOV A,C
+		ANI F0H     ;We keep the 4 MSBs 
+		RLC         ;Transfer them in LSBs's position
+		RLC
+		RLC
+		RLC
+		MOV M,A     ;Store them in 0A05H i.e. in the last postion of 7-segment display
+		LXI D,0800H ;Load to D the fisrt position of block 0A00H - 0A05H to be ready for DCD
+		CALL STDM
+		CALL DCD    ;display the code
+		JMP START   ;Loop to start for continuous operation
+		END
+		

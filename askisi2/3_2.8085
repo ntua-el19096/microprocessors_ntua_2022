@@ -1,0 +1,50 @@
+	LXI B,01F4H
+
+START:	CALL KIND	;detect an keyboard stroke and store the value in A
+	MVI D,08H	;D=8 because we want to detect only the buttons 1-8 
+	MVI E,04H	;E=4 to check if the button is between 1 and 4 or 
+			;between 5 and 8
+
+L1:	CMP D	
+	JZ LED_MSB	;If A=D before E=0 go to turn on the MSBs
+	DCR D		;decrease by 1 the D in each iteration
+	DCR E		;decrease by 1 the E in each iteration
+	JNZ L1		;If E=0 go to check if the button is between 1-4
+
+	MVI E,04H	;E=4
+L2:	CMP D		
+	JZ LED_LSB	;If A=D before E=0 go to turn on the MSBs 
+	DCR D	;decrease by 1 the D in each iteration		
+	DCR E		;decrease by 1 the E in each iteration
+	JZ START	;if E=0 jump to START because no button between 1-8 
+			;has been pressed
+	JMP L2		;else jump again to L2
+
+LED_LSB:
+	MVI E,04H	;E=4 to turn on/off 4 times
+L3:	MVI A,F0H	;A=11110000 to turn on 4 LSBs
+	STA 3000H	;Output LEDs
+	CALL DELB	;Add Delay
+	MVI A,FFH	;A=11111111 to turn off 4 LSBs
+	STA 3000H	;Output LEDs
+	CALL DELB	;Add delay
+	DCR E		;decrease E
+	JZ START	;If E=0 jump to start
+	JMP L3		;else jump to L3
+
+LED_MSB:
+	MVI E,04H	;E=4 to turn on/off 4 times
+L4:	MVI A,0FH	;A=00001111 to turn on 4 MSBs
+	STA 3000H	;Output LEDs
+	CALL DELB	;Add delay
+	MVI A,FFH	;A=11111111 to turn off 4 MSBs
+	STA 3000H	;Output LEDs
+	CALL DELB	;Add delay
+	DCR E		;Decrease E
+	JZ START	;If E=0 go to start to check for key stroke
+	JMP L4		;Else, go to L4 to flash again
+	END
+
+
+						
+		

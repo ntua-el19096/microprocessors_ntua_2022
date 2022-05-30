@@ -1,0 +1,40 @@
+START:	MVI B,08H 	;Initialize B with 8 decimal
+	LDA 2000H 	;Load switch input
+
+L1:	RLC	 	;Left shift
+	JC POSITION	;If Carry is 1,go to find the position
+	DCR B	 	;Decrease B by 1
+	JZ TURNOFF 	;If B is 0, we want all leds OFF
+	JMP L1		;Else jump to L1 (loop)
+
+POSITION:
+	MVI A,FEH	;11111110 --> A
+	MVI C,FEH	;11111110 --> C , C is gonna be a mask
+	DCR B		;Decrease B by 1	
+	JZ TURNALL	;If B is 0 we want all leds ON
+
+CHECK:	DCR B		;Loop here while B > 0	
+	JZ LED		;if B=0 go to LED to turn on the right LEDs 
+	RLC		;Right shift A
+	ANA C		;A logical AND C to turn off next LSB LED 
+	MOV C,A		;C=A to refresh mask and use it again next time
+	JMP CHECK	;go to CHECK
+
+LED:	CMA		;Complement of A (inverse led logic)
+	STA 3000H	;Output LEDs
+	JMP START	;Go to START to check DIP switches
+
+TURNALL:
+	MVI A,00H	;all leds ON
+	STA 3000H	;Output LEDs
+	JMP START	;Jump to START for continuous operation 
+		
+		
+TURNOFF:
+	MVI A,FFH 	;all leds OFF
+	STA 3000H	;Output LEDs
+	JMP START	;Jump to START for continuous operation
+	END
+	
+	
+	

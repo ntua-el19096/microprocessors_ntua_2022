@@ -1,0 +1,51 @@
+	LXI B,00C8H  	;Load registers BC with 200 for 200ms delay
+START:
+	LDA 2000H	;Load DIP switches 
+	RRC		;Right shift to check the LSB
+	JNC LSBOFF   	;If LSB is off go to LSBOFF label
+	JMP START    	;Else check again (loop)
+LSBOFF:
+	LDA 2000H 	;load again
+	RRC		;right shift to get LSB
+	JC LSBON 	;if lsb is on, go to LSBON label
+	JMP LSBOFF 	;else check again
+LSBON:
+	LDA 2000H	;load DIP switches again
+	RRC		;right shift to get LSB
+	MVI E,25H	;E=37 to turn on and off LEDs ~15sec (2*37*200ms=~75*200ms) 
+	JNC LED		;If lsb is off turn on leds
+	JMP LSBON 	;else wait for the lsb to turn off
+LED:
+	LDA 2000H	;load DIP 
+	RRC		;get LSB
+	JC LED2		;if LSB=1 go LED2 to check if we have to reset timer
+	MVI A,00H	;else a=0 to turn on LEDs
+	STA 3000H	;output leds
+	CALL DELB	;add delay
+	MVI A,FFH	;a=1 to turn off all leds
+	STA 3000H	;output leds
+	CALL DELB	;add delay
+	DCR E		;decrease turn-on/off counter
+	JNZ LED		;if timer!=0 go to LED to flash leds again
+	JMP START	;else go to start to check DIP
+LED2:
+	LDA 2000H	;load DIPs
+	RRC		;right shift to get LSB
+	JNC RESET_TIMER ;if LSB=0 go to RESET_TIMER to reset timer
+	MVI A,00H	;A=00000000 to turn on LEDs
+	STA 3000H	;output LEDs
+	CALL DELB	;add delay
+	MVI A,FFH	;A=11111111 to turn off all LEDs
+	STA 3000H	;output LEDs
+	CALL DELB	;add delay
+	DCR E		;decrease flash times counter
+	JNZ LED2	;if counter!=0 go to LED2 to flash again
+	JMP START	;else go to START to check DIPs
+RESET_TIMER:	
+	MVI E,25H	;reset timer
+	JMP LED		;go to LED
+FINISH:
+	END
+	
+	
+	
