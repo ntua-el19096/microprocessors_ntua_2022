@@ -1,0 +1,35 @@
+#include <avr/io.h>
+
+char led;
+
+int main() {
+	DDRA = 0x00; //setting A as input
+	DDRB = 0xFF; //setting B as output
+	PORTA = 0xFF; //pullup resistors at A
+    	led = 0x01; //turning on first led
+	while (1) {
+		if((PINA&0x01)==0x01) { // left rotation with step 1
+			while((PINA&0x01)==0x01); //wait until button is depressed
+			if(led == 0x80) {led = 0x01;}
+			else led = led<<1;
+		}	
+		if((PINA&0x02)==0x02) { // right rotation with step 1
+			while((PINA&0x02)==0x02); //wait until button is depressed
+			if(led == 0x01) {led = 0x80;}
+			else led = led>>1;
+		}
+		if((PINA&0x04)==0x04) { // left rotation with step 2
+			while((PINA&0x04)==0x04); //wait until button is depressed
+			if(led == 0x80) led = 0x02;
+			else if(led == 0x40) led = 0x01;
+			else led = led<<2;
+		}
+		if((PINA&0x08)==0x08) { //if PA3 is pressed
+			while((PINA&0x08)==0x08); //wait until button is depressed
+			led = 0x80; // move to msb
+		}
+		PORTB = led; //output led to PORTB
+    }
+	return 0;
+}
+

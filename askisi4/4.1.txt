@@ -1,0 +1,74 @@
+.include "m16def.inc"
+.DEF temp = r16
+.DEF leds = r17
+
+.macro check_a_press ;macro to check if PA0 is pressed
+	in temp,PINA ;check if PA0 was pressed
+	sbrc temp,0 ;if not skip next instruction
+	rcall wait ;if yes wait until PA0 in depressed
+.endmacro
+
+.macro delay ;macro to add delay
+	ldi r24, low(500)
+	ldi r25, high(500)
+	rcall wait_msec
+.endmacro
+
+reset:
+	ldi r24, low(RAMEND) ;Stack Pointer initialization
+	out SPL, r24
+	ldi r24, high(RAMEND)
+	out SPH, r24
+
+start:
+	ldi leds,0x01 ;turn on first led
+	clr temp ;temp = 0x00
+	out DDRA,temp ;setting A as input
+	ser temp ;temp = 0xFF
+	out PORTA,temp ;pull-up at port A
+	out DDRB,temp ;B port as output
+
+left:
+	out PORTB,leds ;turn on LED
+	delay
+	check_a_press
+	lsl leds ;move LED on position to the left
+	sbrs leds,7 ;if led is at MSB position dont run next instruction
+	rjmp left ;if no then run left label again (move led to the left)
+
+right:
+	out PORTB,leds ;turn om LED
+	delay
+	check_a_press
+	lsr leds ;shift LED one position right
+	sbrs leds,0 ;if LED is at LSB go to left label
+	rjmp right ;if no then shift led to the right one more time
+	rjmp left
+
+wait: 	;routine to wait until PA0 is not pressed
+	in temp,PINA ;wait until PA0 = 0
+	andi temp,0x01 ;get LSB of PA0
+	cpi temp,0x01 ; check if it still active
+	breq wait ; in yes then run wait routine again
+	ret ;if not then return
+
+wait_msec: ;routine to wait R24-R25 mseconds (r24,r25 are the passed value of msecs)
+	push r24
+	push r25
+	ldi r24, low(998)
+	ldi r25, high(998)
+	rcall wait_usec
+	pop r25
+	pop r24
+	sbiw r24, 1
+	brne wait_msec
+	ret
+
+wait_usec:
+	sbiw r24, 1
+	nop
+	nop
+	nop
+	nop
+	brne wait_usec
+	ret

@@ -1,0 +1,64 @@
+.include "m16def.inc"
+.def temp = r16
+.def A = r17
+.def B = r18
+.def C = r19
+.def D = r20
+.def F0 = r21
+.def F1 = r22
+
+reset:
+	ldi r24, low(RAMEND) ;initialization Stack Pointer
+	out SPL, r24
+	ldi r24, high(RAMEND)
+	out SPH, r24
+
+start:
+	clr temp
+	out DDRB, temp ;setting port B as input
+	ser temp 
+	//out PORTB, temp ;setting pull up resistors
+	out DDRA, temp ;settig port A as output
+
+main:
+	clr F0 ;setting output as zero
+	in temp, PINB ;getting the value of PINB (input)
+	mov A, temp ; first digit of A is B0
+	lsr temp ;left shift 	
+	mov B, temp ; first digit of B is B1
+	lsr temp ;left shift
+	mov C, temp ; first digit of C is B2
+	lsr temp ;left shift
+	mov D, temp ; first digit of D is B3
+	and A,B ;F0 = ABC + B'C'D'
+	and A,C
+	com B
+	com C
+	com D
+	and B,C
+	and B,D
+	or A,B
+	andi A, 0x01 ; getting the last digit A (the rest is noise)
+	mov F0, A ;move A to F0
+
+	clr F1 ;the same as above but the logical operation is different
+	in temp, PINB
+	mov A, temp
+	lsr temp
+	mov B, temp
+	lsr temp 
+	mov C, temp
+	lsr temp
+	mov D, temp
+	or A,B ;F1= (A+B+C)*D
+	or A,C
+	and A, D
+	andi A, 0x01
+	mov F1, A
+
+	lsl F1 ; left shift F1 to output to PA1
+	andi F0, 0x01 ;isolate first digit
+	andi F0, 0x02 ;isolate second digit
+	or F1,F0 ;combine F0 and F1
+	out PORTA, F1 ;output
+	rjmp main ;run again
