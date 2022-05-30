@@ -1,0 +1,38 @@
+LXI B,01F4 ; time delay 500ms
+START:
+	LDA 2000H ; load dip switches
+	CPI 64H ; check if number is less than 100
+	JNC GRTR99 ; if yes go to greater99
+	MVI E,FFH ; initialize E with -1
+SMLR100:
+	INR E ; add 1 ten
+	SUI 0AH ; subtract 1 ten from A
+	JNC SMLR100 ; if A>0, keep subtracting
+	ADI 0AH ; else, correct the negative remainder
+	MOV D,A ;D has units
+ 	MOV A,E ;E has tens (and store them in A)
+	RLC ;move tens to the 4 MSBs
+	RLC
+	RLC
+	RLC
+	ORA D ; logical addition to show the units 4 LSBs (A+D)
+	CMA ; complement due to inverse led logic
+	STA 3000H ; output
+	JMP START ; jump start to check for a new number
+GRTR99:
+	MVI E,FFH ; initialize E with -1
+	CPI C8H ; check if number >=200
+	JNC GRTR199 ; if yes, go to greater199
+	SUI 64H ; else, subtract 100
+	JMP SMLR100 ; output the value of {input}-100
+GRTR199:
+	MVI A,0FH ; set 4 LED LSBs on
+	CMA
+	STA 3000H ; output
+	CALL DELB ;delay
+	MVI A,00H ; set 4 LED LSBs off
+	CMA
+	STA 3000H ;output
+	CALL DELB ;delay
+	JMP START ;go to start and check for a new number
+	END	

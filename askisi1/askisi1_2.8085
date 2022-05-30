@@ -1,0 +1,39 @@
+IN 10H ;memory protection off
+LXI B,01F4H ;delay 500ms 
+MVI D,FEH
+START:
+	LDA 2000H ; load dip switches
+	RRC
+	RRC ; cy = 2nd LSB
+	JC START ; If CY=1, 2nd LSB is on, loop start to keep led steady
+L1:
+	MOV A,D ; load led position in accumulator
+	STA 3000H ; output led position
+	CALL DELB ; add delay
+	RLC ; move led to next (left) position
+	MOV D,A ; store led position in d
+	CPI 7FH ; check if led is in the 8th position
+	JZ L2 ; if yes go to l2 to check dipswitch lsb
+	JMP START ; jump to start to move the led again
+L2:
+	LDA 2000H ; load dipswitches again
+	RRC
+	RRC
+	JC L2 ; If CY=1, 2nd LSB is on, loop L2 to keep led steady 
+	RRC
+	RRC
+	RRC
+	RRC
+	RRC
+	RRC
+	RRC
+	JNC L1 ; if CY=0 go to L1 for circular mode
+	MOV A,D ; load led position
+	STA 3000H ; output led position
+	CALL DELB ; add delay
+	RRC ; right shift led position
+	MOV D,A ; store led position
+	CPI FEH ; check if first led is on
+	JZ START ; if yes go to L1 to start left shifting
+	JMP L2 ; if not, check the lsb and act according to the LSB
+	END
