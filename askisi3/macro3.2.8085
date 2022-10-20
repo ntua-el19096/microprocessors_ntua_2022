@@ -1,0 +1,18 @@
+MACRO FILLD ADDR, K
+	PUSH PSW
+	PUSH B
+	PUSH H
+	PUSH L
+	MVI B, K 		;store K into a register
+	LXI H,ADDR	;load into H-L addr
+LOOP:
+	MOV M,B		;store value of B into memory
+	INX H		;increase memory pointer
+	DCR B		;decrease K
+	JZ END		;loop while B=/=0
+END:
+	POP L
+	POP H
+	POP B
+	POP PSW
+

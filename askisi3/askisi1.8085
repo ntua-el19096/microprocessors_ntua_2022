@@ -1,0 +1,71 @@
+IN 10H
+MVI B,06H
+LXI H,0A00H
+FOR:
+	MVI M,10H
+	INX H
+	DCR B
+	JNZ FOR
+
+	MVI A,0DH	;load value in A for mask interrupt
+	SIM		;load interrupt mask with A	 
+	EI		;enable interrupt RST 6.5
+
+WAIT_UNTIL_INT:
+	JMP WAIT_UNTIL_INT
+
+INTR_ROUTINE:
+	MVI E,2DH		;E=45 for LED ON/OFF duration
+	LXI B,01F4H	;B = 500 (500 ms in DELB)
+	EI
+
+START:
+	MVI D,02H	;D=2 to simulate 1 sec time
+	MVI A,00H	;00000000--> A 
+	STA 3000H	;LED ON
+	CALL DELB
+	MVI A,FFH	;11111111--> A 
+	STA 3000H	;LED OFF
+	CALL DELB
+	CALL COUNTDOWN
+	
+LOOP1:
+	CALL SHOW	;show the remain time
+	;CALL DELB
+	DCR D
+	JNZ LOOP1	;loop twice (2*500 ms = 1 sec)
+	DCR E	;decrease the time by 1
+	JNZ START	;loop to start 
+	
+	JMP WAIT_UNTIL_INT
+
+COUNTDOWN:
+	PUSH PSW
+	PUSH B
+	PUSH H
+	MOV A,E	;Load with A with remaining time in Decimal	
+	MVI B,FFH	;Initialize C as "-1"
+
+L1:	INR B
+	SUI 0AH
+	JNC L1 	;While A>0 loop to L1 to compute decades
+	ADI 0AH	;Add 10 to A to compute the units
+	LXI H,0A04H
+	MOV M,A	;Store in fifth seg-disp the units
+	INX H
+	MOV M,B	;Store in sixth seg-disp the decades
+	POP H
+	POP B
+	POP PSW
+	RET
+
+SHOW:
+	PUSH PSW
+	PUSH D
+	LXI D,0A00H	;Load D with the first memory position
+	CALL STDM
+	CALL DCD		;display the time in the last two seg-disp
+	POP D
+	POP PSW
+	RET
+END

@@ -1,0 +1,53 @@
+IN 10H			;unlock memory
+MVI A,0EH		;load in A appropriate interupt mask
+SIM				;move A into interupt mask
+MVI C,20H		;C=32d (32 steps)
+EI				;enable interupt
+
+MAIN:
+	IN 20H		;get input
+	ANI 01H		;isolate x0
+	JNZ MAIN  	;wait until x0 = 0
+	JMP GET_DATA
+GOT_DATA:
+	IN 20H		;get input
+	ANI 01H		;isolate x0
+	JZ GOT_DATA	;loop in here until x0 goes back to 1
+	JMP MAIN	;if it goes to 1 go to main to wait for it
+				;to go to 0 again
+GET_RESULTS
+	DAD H		;4 double additions equals to 4 left shifts
+	DAD H		;so now H has the 8 bit result (the mean value)
+	DAD H
+	DAD H
+	MOV A,H		;put result into A
+
+GET_DATA:
+	MOV A,C		;move C into A to check remaining steps
+	ANI 01H		;if last digit is 1 then we have odd numbers
+				;of remaining steps so we have to get msb
+	JZ GET_4LSB
+	JMP GET_4MSB	
+GET_4LSB:
+	IN 20H		;get input
+	ANI F0H		;isolate x7-x4
+	RRC			;4 right shifts to make them LSB
+	RRC
+	RRC
+	RRC
+	MOV B,A		;move them into B to store them temporarily
+				;until we get MSBs
+	JMP RETURN	;return from interupt handling
+GET_4MSB:
+	IN 20H		;get input
+	ANI F0H		;isolate x7-x4
+	ORA B		;add them to 4 LSBs
+	MVI D,00H	;zeros into D so that it does not interfere
+				;with the addition
+	MOV E,A		;move them into E
+	DAD D		;add D-E into H-L
+RETURN:
+	
+	DCR C		;decrease number of remaining steps
+	JZ	GET_RESULTS;if we got every number goto calculate mean
+	JMP GOT_DATA;return from interupt handling

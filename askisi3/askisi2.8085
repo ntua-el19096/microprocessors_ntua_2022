@@ -1,0 +1,71 @@
+	IN 10H 			;remove memory protection
+	MVI A,0DH 		;insert interupt mask into A
+	SIM				;move A into interupt mask
+	EI 				;enable interupt based on mask
+
+	MVI C,3CH 		;first threshold
+	MVI D,78H 		;second threshold
+	MVI E,B4H 		;third threshold
+
+	MVI B,06H 		;iterator
+	LXI H,0A00H 		;first memory location
+DISP_INIT:
+	MVI M,10H 		;store to memory blank character code
+	INX H 			;next memory position
+	DCR B 			;iterator--
+	JNZ DISP_INIT 	;repeat
+	
+WAIT:
+	JMP WAIT			;main program (waiting for an interupt)
+
+INTR_ROUTINE:
+	CALL KIND 		;get keyboard input
+	STA 0A03H 		;store in position of msb in 7seg display
+	RLC 				;4 left shifts to make it msb (4 shifts because it is in hex)
+	RLC
+	RLC
+	RLC
+	MOV B,A 			;move to b to get next digit
+	CALL KIND 		;get next digit
+	STA 0A02H 		;store in lsb position in 7srg display
+	ORA B 			;add digits together
+	CMP C 			;compare if it is less than threshold1
+	JC FIRST_LED 		;turn on first led if <threshold1
+	JZ FIRST_LED 		;turn on first led if =threshold1
+	CMP D 			;compare if it is less than threshold2
+	JC SECOND_LED 	;turn on second led if <threshold2
+	JZ SECOND_LED		;turn on second led if =threshold2
+	CMP E			;compare if it is less than threshold3
+	JC THIRD_LED		;turn on third led if <threshold3 
+	JZ THIRD_LED		;turn on third led if =threshold3
+	JMP FOURTH_LED	;turn on last led
+CONT:
+	EI				;re-enable interrupt
+	RET				;return
+
+FIRST_LED:
+	MVI A,FEH		;turn on first led
+	JMP 	OUTPUT		;jump to output to output into leds and display
+SECOND_LED:
+	MVI A,FDH		;turn on second led
+	JMP OUTPUT		;jump to output to output into leds and display
+
+THIRD_LED:
+	MVI A,FBH		;turn of third led
+	JMP OUTPUT		;jump to output to output into leds and display
+
+FOURTH_LED:
+	MVI A,F7H		;turn on fourth led
+	
+OUTPUT:
+	STA 3000H		;output into leds
+	PUSH D			;push d into stack
+	LXI D,0A00H		;D = &(what to output)
+	CALL STDM		;correct location of 7seg chars
+	CALL DCD			;output into 7seg display
+	POP D			;retrieve D
+	JMP CONT			;jump to continue to finish intreupt handling
+	
+END
+	
+	

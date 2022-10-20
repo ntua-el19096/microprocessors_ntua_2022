@@ -1,0 +1,19 @@
+MACRO INR16 ADDR
+PUSH PSW 		;pwd into stack
+PUSH H		;h into stack
+LXI H,ADDR	;mov addr into h-l register pair
+MOV A,M		;get memory content into A
+INR M		;increase memory content
+CMP 00H		;check if overflow occured
+JZ INCR_MSB	;if yes increment also the next digit
+JMP L1		;if no go to l1 to exit
+
+INCR_MSB:
+INX H		;increase pointer to memory
+INR M		;increaase memory content
+
+L1:		
+POP H		;retrieve H
+POP PSW		;retireve PWD
+ENDM			;end macro
+

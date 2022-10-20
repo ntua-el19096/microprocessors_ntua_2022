@@ -1,0 +1,8 @@
+MACRO RHLL Q,R
+MOV A,R	;move R into A
+RLC		;left shift it (it took CY as LSB and given its MSB to CY)
+MOV R,A	;store R back into R
+MOV A,Q	;move Q into A
+RLC		;left shift it (it took CY as LSB (R's MSB) and given its MSB to CY)
+MOV Q,A	;store A back int Q
+ENDM
